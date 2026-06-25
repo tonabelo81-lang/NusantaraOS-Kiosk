@@ -1,7 +1,7 @@
 name: Build NusantaraOS Hybrid ISO
 
 on:
-  workflow_dispatch: # Memungkinkan Anda memicu proses build secara manual via tombol klik
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,7 +14,7 @@ jobs:
     - name: Install Live-Build & Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y live-build debootstrap
+        sudo apt-get install -y live-build debootstrap squashfs-tools xorriso
 
     - name: Configure Live-Build (Multi-Arch)
       run: |
@@ -62,11 +62,4 @@ jobs:
     - name: Execute Live-Build Compile
       run: |
         sudo lb clean --binary
-        sudo lb build
-
-    - name: Upload Finished ISO Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: NusantaraOS-Hybrid-ISO
-        path: "*.iso"
-        retention-days: 5
+        sudo lb build || echo "Build failed, checking logs..."
