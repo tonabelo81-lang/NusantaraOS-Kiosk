@@ -62,4 +62,13 @@ jobs:
     - name: Execute Live-Build Compile
       run: |
         sudo lb clean --binary
-        sudo lb build || echo "Build failed, checking logs..."
+        sudo lb build
+
+    - name: Upload Finished ISO Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: NusantaraOS-Hybrid-ISO
+        path: |
+          *.iso
+          *.hybrid.iso
+        retention-days: 5
