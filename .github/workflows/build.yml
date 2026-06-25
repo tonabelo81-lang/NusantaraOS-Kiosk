@@ -11,10 +11,11 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Install Live-Build & Dependencies
+    - name: Enable Multiarch and Install Dependencies
       run: |
+        sudo dpkg --add-architecture i386
         sudo apt-get update
-        sudo apt-get install -y live-build debootstrap squashfs-tools xorriso
+        sudo apt-get install -y live-build debootstrap squashfs-tools xorriso bivouac
 
     - name: Configure Live-Build (Multi-Arch)
       run: |
@@ -65,10 +66,11 @@ jobs:
         sudo lb build
 
     - name: Upload Finished ISO Artifact
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: NusantaraOS-Hybrid-ISO
+        name: NusantaraOS-Build-Output
         path: |
           *.iso
-          *.hybrid.iso
+          *.log
         retention-days: 5
