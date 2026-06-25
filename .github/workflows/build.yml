@@ -1,0 +1,72 @@
+name: Build NusantaraOS Hybrid ISO
+
+on:
+  workflow_dispatch: # Memungkinkan Anda memicu proses build secara manual via tombol klik
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+
+    - name: Install Live-Build & Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y live-build debootstrap
+
+    - name: Configure Live-Build (Multi-Arch)
+      run: |
+        lb config \
+          --architectures amd64 \
+          --bootstrap-qemu-architectures i386 \
+          --linux-flavours "amd64 686-pae" \
+          --binary-images iso-hybrid \
+          --memtest memtest86+ \
+          --debian-installer false
+
+    - name: Create Package List
+      run: |
+        mkdir -p config/package-lists
+        cat <<EOF > config/package-lists/kiosk.list.chroot
+        xorg
+        openbox
+        netsurf-gtk
+        lightdm
+        sudo
+        user-setup
+        EOF
+
+    - name: Create Auto-Start Session (.xsession)
+      run: |
+        mkdir -p config/includes.chroot/etc/skel
+        cat <<EOF > config/includes.chroot/etc/skel/.xsession
+        #!/bin/sh
+        openbox-session &
+        sleep 2
+        netsurf-gtk -f "http://localhost"
+        EOF
+        chmod +x config/includes.chroot/etc/skel/.xsession
+
+    - name: Configure Auto-Login (LightDM)
+      run: |
+        mkdir -p config/includes.chroot/etc/lightdm
+        cat <<EOF > config/includes.chroot/etc/lightdm/lightdm.conf
+        [Seat:*]
+        autologin-user=user
+        autologin-user-timeout=0
+        user-session=openbox
+        EOF
+
+    - name: Execute Live-Build Compile
+      run: |
+        sudo lb clean --binary
+        sudo lb build
+
+    - name: Upload Finished ISO Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: NusantaraOS-Hybrid-ISO
+        path: "*.iso"
+        retention-days: 5
